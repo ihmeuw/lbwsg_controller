@@ -16,7 +16,7 @@ if __name__ == "__main__":
         'drmaa',
         'db_queries',
         'pandas<0.25',
-        'tables==3.4.2',
+        'tables==3.4.0',
         'vivarium',
         'pyyaml',
     ]
@@ -35,6 +35,6 @@ if __name__ == "__main__":
         entry_points='''
             [console_scripts]
             make_lbwsg_pickles=lbwsg_controller.cli:make_lbwsg_pickles
-            make_lbwsg_hdf_files=lbwsg_controller.cli.make_lbwsg_hdf_files
+            make_lbwsg_hdf_files=lbwsg_controller.cli:make_lbwsg_hdf_files
         '''
     )
