@@ -112,7 +112,12 @@ def make_all_pickles():
 
 def make_all_hdf_files():
     pickles = get_pickle_map()  # path_stem : [paths], old path first, new path second if both found.
+
     output_root = Path(HDF_OUTPUT_ROOT)
+    output_root.mkdir(exist_ok=True)
+    for measure in MEASURES:
+        (output_root / measure).mkdir(exist_ok=True)
+
     report = {'single': {measure: [] for measure in MEASURES},
               'match': {measure: [] for measure in MEASURES},
               'no_match': {measure: [] for measure in MEASURES}}
@@ -160,7 +165,7 @@ def split_file_name(name):
 
 
 def check_data_equal(data_old, data_new):
-    if data_old.columns == data_new.columns:
+    if data_old.columns.equals(data_new.columns):
         draw_columns = [f'draw_{i}' for i in range(1000)]
         sort_columns = data_new.columns.difference(draw_columns)
         # Sort rows and columns
