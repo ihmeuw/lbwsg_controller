@@ -51,6 +51,7 @@ def make_all_pickles():
             for location in locations:
                 job_template = session.createJobTemplate()
                 job_template.remoteCommand = command
+                import pdb; pdb.set_trace()
                 job_template.args = ['-o', path, '-l', f'"{location}"', '-m', measure]
                 job_template.nativeSpecification = (f'-V '
                                                     f'-b y '
