@@ -148,14 +148,11 @@ def configure_logging():
 
 
 def get_locations() -> List[str]:
-    return ['India']
     from db_queries import get_location_metadata
     reporting = get_location_metadata(location_set_id=GBD_REPORTING_LOCATION_SET_ID, gbd_round_id=GBD_ROUND_ID)
-    reporting = reporting.filter(["location_name"])
-    model_results = get_location_metadata(location_set_id=GBD_MODEL_RESULTS_LOCATION_SET_ID, gbd_round_id=GBD_ROUND_ID)
-    model_results = model_results.filter(["location_name"])
-    locations = pd.concat([reporting, model_results], ignore_index=True).drop_duplicates()
-    return locations.location_name.to_list()
+    reporting = reporting[reporting.location_type.isin(['admin0', 'nonsovereign'])]
+    reporting = reporting.filter(['location_name'])
+    return reporting.location_name.to_list()
 
 
 def sanitize_location(location: str):
