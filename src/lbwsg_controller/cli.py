@@ -10,6 +10,7 @@ import click
 from loguru import logger
 import pandas as pd
 import tqdm
+import yaml
 
 TABLES_VERSIONS = ['old', 'new']
 OLD_TABLES_OUTPUT_PATH = '/share/costeffectiveness/lbwsg_new/old_tables_pickles'
@@ -131,6 +132,9 @@ def make_all_hdf_files():
             else:
                 report['no_match'][measure].append(location)
             data_new.to_hdf(output_path, key='data')
+
+    with (output_root / 'report.yaml').open('w') as f:
+        yaml.dump(report, f)
 
 
 def get_pickle_map():

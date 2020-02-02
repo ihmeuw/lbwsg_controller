@@ -18,6 +18,7 @@ if __name__ == "__main__":
         'pandas<0.25',
         'tables==3.4.2',
         'vivarium',
+        'pyyaml',
     ]
 
 
