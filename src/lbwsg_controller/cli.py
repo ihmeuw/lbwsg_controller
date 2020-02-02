@@ -3,7 +3,7 @@ import itertools
 import os
 from pathlib import Path
 import time
-from typing import List, TextIO
+from typing import List, TextIO, Callable, Any
 import sys
 
 import click
@@ -46,7 +46,8 @@ def make_lbwsg_pickles():
 @click.command()
 def make_lbwsg_hdf_files():
     configure_logging()
-    make_all_hdf_files()
+    main = handle_exceptions(make_all_hdf_files, logger, with_debugger=True)
+    main()
 
 
 def make_all_pickles():
@@ -248,3 +249,25 @@ def sanitize_location(location: str):
     """
     # FIXME: Should make this a reversible transformation.
     return location.replace(" ", "_").replace("'", "_").lower()
+
+
+def handle_exceptions(func: Callable, logger: Any, with_debugger: bool) -> Callable:
+    """Drops a user into an interactive debugger if func raises an error."""
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except (BdbQuit, KeyboardInterrupt):
+            raise
+        except Exception as e:
+            logger.exception("Uncaught exception {}".format(e))
+            if with_debugger:
+                import pdb
+                import traceback
+                traceback.print_exc()
+                pdb.post_mortem()
+            else:
+                raise
+
+    return wrapped
