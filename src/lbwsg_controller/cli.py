@@ -82,7 +82,7 @@ def make_all_pickles():
                 session.deleteJobTemplate(job_template)
             jobs[(version, measure)] = version_measure_jobs
 
-        logger.info('Entering monitoring loop.')make_all_hdf_files()
+        logger.info('Entering monitoring loop.')
         logger.info('-------------------------')
         logger.info('')
 
