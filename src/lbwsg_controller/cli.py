@@ -1,4 +1,6 @@
+from bdb import BdbQuit
 from collections import defaultdict
+import functools
 import itertools
 import os
 from pathlib import Path
@@ -80,7 +82,7 @@ def make_all_pickles():
                 session.deleteJobTemplate(job_template)
             jobs[(version, measure)] = version_measure_jobs
 
-        logger.info('Entering monitoring loop.')
+        logger.info('Entering monitoring loop.')make_all_hdf_files()
         logger.info('-------------------------')
         logger.info('')
 
