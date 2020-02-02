@@ -170,7 +170,7 @@ def split_file_name(name):
 def check_data_equal(data_old, data_new):
     if data_old.columns.equals(data_new.columns):
         draw_columns = [f'draw_{i}' for i in range(1000)]
-        sort_columns = data_new.columns.difference(draw_columns)
+        sort_columns = data_new.columns.difference(draw_columns).to_list()
         # Sort rows and columns
         data_old = data_old.set_index(sort_columns).sort_index()[draw_columns]
         data_new = data_new.set_index(sort_columns).sort_index()[draw_columns]
