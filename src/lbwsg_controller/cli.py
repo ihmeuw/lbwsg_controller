@@ -81,7 +81,7 @@ def make_all_pickles():
 
         finished = [drmaa.JobState.DONE, drmaa.JobState.FAILED]
 
-        while any([job[1] not in finished for job in jobs.values()]):
+        while any([job[1] not in finished for job in jobs[(version, measure)].values() for (version, measure) in VERSIONS_AND_MEASURES]):
             time.sleep(10)
             for version, measure in VERSIONS_AND_MEASURES:
                 for location, (job_id, status) in jobs[(version, measure)].items():
@@ -146,6 +146,7 @@ def configure_logging():
 
 
 def get_locations() -> List[str]:
+    return ['India']
     from db_queries import get_location_metadata
     reporting = get_location_metadata(location_set_id=GBD_REPORTING_LOCATION_SET_ID, gbd_round_id=GBD_ROUND_ID)
     reporting = reporting.filter(["location_name"])
