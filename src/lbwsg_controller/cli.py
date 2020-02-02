@@ -117,7 +117,7 @@ def make_all_hdf_files():
               'match': {measure: [] for measure in MEASURES},
               'no_match': {measure: [] for measure in MEASURES}}
 
-    for name, paths in tqdm(pickles.items()):
+    for name, paths in tqdm.tqdm(pickles.items()):
         location, measure = split_file_name(name)
         output_path = output_root / measure / f'{location}.hdf'
         if len(paths) == 1:
