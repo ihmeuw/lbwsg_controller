@@ -1,5 +1,7 @@
+from collections import defaultdict
 import itertools
 import os
+from pathlib import Path
 import time
 from typing import List, TextIO
 import sys
@@ -19,6 +21,8 @@ NEW_TABLES_COMMAND = '/share/costeffectiveness/lbwsg_new/miniconda3/envs/lbwsg_n
 COMMANDS = {'old': OLD_TABLES_COMMAND,
             'new': NEW_TABLES_COMMAND}
 
+HDF_OUTPUT_ROOT = '/share/costeffectiveness/lbwsg_new/data'
+
 
 GBD_ROUND_ID = 5
 GBD_REPORTING_LOCATION_SET_ID = 1
@@ -36,6 +40,12 @@ VERSIONS_AND_MEASURES = list(itertools.product(TABLES_VERSIONS, MEASURES))
 def make_lbwsg_pickles():
     configure_logging()
     make_all_pickles()
+
+
+@click.command()
+def make_lbwsg_hdf_files():
+    configure_logging()
+    make_all_hdf_files()
 
 
 def make_all_pickles():
@@ -97,6 +107,64 @@ def make_all_pickles():
             pbar.close()
 
     logger.info('**Done**')
+
+
+def make_all_hdf_files():
+    pickles = get_pickle_map()  # path_stem : [paths], old path first, new path second if both found.
+    output_root = Path(HDF_OUTPUT_ROOT)
+    report = {'single': {measure: [] for measure in MEASURES},
+              'match': {measure: [] for measure in MEASURES},
+              'no_match': {measure: [] for measure in MEASURES}}
+
+    for name, paths in tqdm(pickles.items()):
+        location, measure = split_file_name(name)
+        output_path = output_root / measure / f'{location}.hdf'
+        if len(paths) == 1:
+            data = pd.read_pickle(paths[0])
+            data.to_hdf(output_path, key='data')
+            report['single'][measure].append(location)
+        else:  # len(paths) == 2, duplicates found.
+            data_old = pd.read_pickle(paths[0])
+            data_new = pd.read_pickle(paths[1])
+            if check_data_equal(data_old, data_new):
+                report['match'][measure].append(location)
+            else:
+                report['no_match'][measure].append(location)
+            data_new.to_hdf(output_path, key='data')
+
+
+def get_pickle_map():
+    old_path = Path(OLD_TABLES_OUTPUT_PATH)
+    old_pickles = [p for p in old_path.iterdir() if p.is_file()]
+    new_path = Path(NEW_TABLES_OUTPUT_PATH)
+    new_pickles = [p for p in new_path.iterdir() if p.is_file()]
+
+    pickles = defaultdict(list)
+    for p in old_pickles + new_pickles:
+        pickles[p.stem].append(p)
+    return pickles
+
+
+def split_file_name(name):
+    measure = ''
+    location = ''
+    for m in MEASURES:
+        if m in name:
+            measure = m
+            location = name.split(f'_{m}')[0]
+    return location, measure
+
+
+def check_data_equal(data_old, data_new):
+    if data_old.columns == data_new.columns:
+        draw_columns = [f'draw_{i}' for i in range(1000)]
+        sort_columns = data_new.columns.difference(draw_columns)
+        # Sort rows and columns
+        data_old = data_old.set_index(sort_columns).sort_index()[draw_columns]
+        data_new = data_new.set_index(sort_columns).sort_index()[draw_columns]
+        return data_old.equals(data_new)
+    else:
+        return False
 
 
 def get_drmaa():
