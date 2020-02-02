@@ -114,7 +114,9 @@ def make_all_pickles():
 
 
 def make_all_hdf_files():
-    pickles = get_pickle_map()  # path_stem : [paths], old path first, new path second if both found.
+    # pickles is dict with path_stem : [paths], old path first, new path second if both found.
+    # missing is set of file stems
+    pickles, missing = get_pickle_map()
 
     output_root = Path(HDF_OUTPUT_ROOT)
     output_root.mkdir(exist_ok=True)
@@ -123,23 +125,39 @@ def make_all_hdf_files():
 
     report = {'single': {measure: [] for measure in MEASURES},
               'match': {measure: [] for measure in MEASURES},
-              'no_match': {measure: [] for measure in MEASURES}}
+              'no_match': {measure: [] for measure in MEASURES},
+              'missing': {measure: [] for measure in MEASURES}}
+
+    for m in missing:
+        measure, location = split_file_name(m)
+        report['missing'][measure].append(location)
 
     for name, paths in tqdm.tqdm(pickles.items()):
         location, measure = split_file_name(name)
         output_path = output_root / measure / f'{location}.hdf'
         if len(paths) == 1:
-            data = pd.read_pickle(paths[0])
-            data.to_hdf(output_path, key='data')
-            report['single'][measure].append(location)
-        else:  # len(paths) == 2, duplicates found.
-            data_old = pd.read_pickle(paths[0])
-            data_new = pd.read_pickle(paths[1])
-            if check_data_equal(data_old, data_new):
-                report['match'][measure].append(location)
+            data = load_pickeled_data(paths[0])
+            if data is not None:
+                data.to_hdf(output_path, key='data')
+                report['single'][measure].append(location)
             else:
-                report['no_match'][measure].append(location)
-            data_new.to_hdf(output_path, key='data')
+                report['missing'][measure].append(location)
+
+        else:  # len(paths) == 2, duplicates found.
+            data_old = load_pickeled_data(paths[0])
+            data_new = load_pickeled_data(paths[1])
+            if data_old is not None and data_new is not None:
+                if check_data_equal(data_old, data_new):
+                    report['match'][measure].append(location)
+                else:
+                    report['no_match'][measure].append(location)
+                data_new.to_hdf(output_path, key='data')
+            elif data_old is not None or data_new is not None:
+                data = data_old if data_old is not None else data_new
+                report['single'][measure].append(location)
+                data.to_hdf(output_path, key='data')
+            else:
+                report['missing'][measure].append(location)
 
     with (output_root / 'report.yaml').open('w') as f:
         yaml.dump(report, f)
@@ -147,14 +165,22 @@ def make_all_hdf_files():
 
 def get_pickle_map():
     old_path = Path(OLD_TABLES_OUTPUT_PATH)
+    old_log_path = old_path / 'logs'
     old_pickles = [p for p in old_path.iterdir() if p.is_file()]
+    old_logs = [p for p in old_log_path.iterdir() if p.is_file()]
     new_path = Path(NEW_TABLES_OUTPUT_PATH)
+    new_log_path = new_path / 'logs'
     new_pickles = [p for p in new_path.iterdir() if p.is_file()]
+    new_logs = [p for p in new_log_path.iterdir() if p.is_file()]
+
+    old_missing = set([p.stem for p in old_logs]).difference([p.stem for p in old_pickles])
+    new_missing = set([p.stem for p in new_logs]).difference([p.stem for p in new_pickles])
+    missing = old_missing.intersection(new_missing)
 
     pickles = defaultdict(list)
     for p in old_pickles + new_pickles:
         pickles[p.stem].append(p)
-    return pickles
+    return pickles, missing
 
 
 def split_file_name(name):
@@ -177,6 +203,13 @@ def check_data_equal(data_old, data_new):
         return data_old.equals(data_new)
     else:
         return False
+
+
+def load_pickeled_data(path):
+    try:
+        return pd.read_pickle(path)
+    except EOFError:
+        return None
 
 
 def get_drmaa():
