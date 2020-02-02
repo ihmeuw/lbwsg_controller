@@ -11,22 +11,12 @@ if __name__ == "__main__":
     install_requirements = [
         'click',
         'loguru',
+        'pandas',
+        'tqdm',
+        'drmaa',
+        'db_queries'
     ]
 
-    extras_require = {
-        'tables-old': [
-            'tables==3.4.0',
-            'pandas<0.25',
-            'get_draws',
-            'db_queries',
-        ],
-        'tables-new': [
-            'tables==3.5.2',
-            'pandas>=0.25',
-            'get_draws',
-            'db_queries',
-        ]
-    }
 
     setup(
         name='lbwsg_controller',
@@ -35,12 +25,11 @@ if __name__ == "__main__":
         include_package_data=True,
 
         install_requires=install_requirements,
-        extras_require=extras_require,
 
         zip_safe=False,
 
         entry_points='''
             [console_scripts]
-            make_lbwsg_pickle=lbwsg.cli:get_draws
+            make_lbwsg_pickles=lbwsg_controller.cli:make_lbwsg_pickles
         '''
     )
