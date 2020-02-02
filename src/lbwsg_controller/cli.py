@@ -29,7 +29,7 @@ MEASURES_SHORT = {'exposure': 'exp',
                   'relative_risk': ' rr',
                   'population_attributable_fraction': 'paf'}
 
-VERSIONS_AND_MEASURES = itertools.product(TABLES_VERSIONS, MEASURES)
+VERSIONS_AND_MEASURES = list(itertools.product(TABLES_VERSIONS, MEASURES))
 
 
 @click.command()
@@ -51,7 +51,6 @@ def make_all_pickles():
             for location in locations:
                 job_template = session.createJobTemplate()
                 job_template.remoteCommand = command
-                import pdb; pdb.set_trace()
                 job_template.args = ['-o', path, '-l', f'"{location}"', '-m', measure]
                 job_template.nativeSpecification = (f'-V '
                                                     f'-b y '
@@ -81,7 +80,6 @@ def make_all_pickles():
             counts[(version, measure)] = 0
 
         finished = [drmaa.JobState.DONE, drmaa.JobState.FAILED]
-
         while any([job[1] not in finished for job in jobs[(version, measure)].values() for (version, measure) in VERSIONS_AND_MEASURES]):
             time.sleep(10)
             for version, measure in VERSIONS_AND_MEASURES:
