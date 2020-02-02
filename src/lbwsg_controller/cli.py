@@ -93,6 +93,9 @@ def make_all_pickles():
                 progress_bars[(version, measure)].update(new_count - old_count)
                 counts[(version, measure)] = new_count
 
+        for pbar in progress_bars.values():
+            pbar.close()
+
     logger.info('**Done**')
 
 
